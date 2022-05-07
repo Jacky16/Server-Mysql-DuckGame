@@ -10,7 +10,10 @@ class DatabaseManager
     string conncectionString = $"Server=db4free.net;Port={port};database={databaseName};Uid={uID};password={password};SSL Mode=None; connect timeout=3600; default command timeout = 3600;";
     MySqlConnection connection;
 
-   
+    public DatabaseManager()
+    {
+        ShowAllPlayer();
+    }
     public void StartService()
     {
         connection = new MySqlConnection(conncectionString);
@@ -26,10 +29,11 @@ class DatabaseManager
 
     }
 
-    public void Register(string nick,string password, string email)
+    public void Register(string nick, string password, string email)
     {
+        StartService();
         MySqlCommand command = connection.CreateCommand();
-        string query = $"Insert Into Player(username,password,email) Values('{nick}',{password},'{email};";
+        string query = $"Insert Into Player(username,password,email) Values('{nick}','{password}','{email}');";
         command.CommandText = query;
         try
         {
@@ -39,12 +43,17 @@ class DatabaseManager
         {
             Console.WriteLine(ex.Message);
         }
+        
+        connection.Close();
+        ShowAllPlayer();
     }
 
-    public bool LogInUser(string email, string password)
+    public bool LogInUser(string email, string password, ref Client client)
     {
+        StartService();
         MySqlCommand command = connection.CreateCommand();
-        string query = $"Select * from Player where email = '{email}' and password = '{password}';";
+        string query = $"Select * from Player where email='{email}' and password='{password}';";
+        Console.WriteLine(query);
         command.CommandText = query;
         MySqlDataReader reader;
         try
@@ -52,6 +61,10 @@ class DatabaseManager
             reader = command.ExecuteReader();
             while (reader.Read())
             {
+                client.SetEmail(reader["email"].ToString());
+                client.SetNick(reader["username"].ToString());
+                
+                Console.WriteLine("Log in correcto " + reader["username"].ToString());
                 return reader["email"].ToString() == email &&
                     reader["password"].ToString() == password;
             }
@@ -60,10 +73,32 @@ class DatabaseManager
         {
             Console.WriteLine(ex.Message);
         }
-        //connection.Close();
-
+        connection.Close();
         return false;
     }
 
-}
+    void ShowAllPlayer()
+    {
+        StartService();
+        MySqlCommand command = connection.CreateCommand();
+        string query = $"Select * from Player;";
+        command.CommandText = query;
+        MySqlDataReader reader;
+        try
+        {
+            reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                Console.WriteLine(reader["username"].ToString() + " " + reader["password"].ToString() + " " + reader["email"].ToString());
+            }
+
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+        connection.Close();
+
+    }
+}    
 

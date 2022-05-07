@@ -146,9 +146,12 @@ public class Network_Manager
         {
             //Hemos definido que el 0 significa login y recibe dos parametros mas (usuario y contraseña)
             case "Login":
-                Login(client,parameters[1], parameters[2]);
+                client.SetEmail(parameters[1]);
+                client.SetPassword(parameters[2]);
+                Login(client);
                 break;
             case "Register":
+                Register(parameters[1], parameters[2], parameters[3]);
                 break;
             case "1":
                 //Hemos definido que el 1 es la respuesta del ping y no recibe mas parametros
@@ -157,10 +160,10 @@ public class Network_Manager
         }
     }
 
-    private void Login(Client client, string email, string password)
+    private void Login(Client client)
     {
         //Hacemos un print pero aqui hariamos verificariamos los datos de login
-        if (databaseManager.LogInUser(email, password))
+        if (databaseManager.LogInUser(client.GetEmail(), client.GetPassword(),ref client))
         {
             //Si ha ido bien el inicio de sesion, le enviamos un codigo de Okay(2)
             SendInfoToUnityClient(client, 2);
@@ -207,7 +210,14 @@ public class Network_Manager
             StreamWriter writer = new StreamWriter(client.GetTcpClient().GetStream());
 
             //Enviamos el ping
-            writer.WriteLine(code.ToString());
+            if (code == 2)
+            {
+                writer.WriteLine(code.ToString() + "/" + client.GetNick());
+            }
+            else if (code == 3)
+            {
+                writer.WriteLine(code.ToString());
+            }
 
             //Limpiamos el bufer de envio para evitar que siga acumulando datos
             writer.Flush();
@@ -221,6 +231,8 @@ public class Network_Manager
         }
     }
 
+   
+    
     //Al recibir un ping asignamos la variable del ping propia del cliente a false para indicar que nos ha respondido
     private void ReceivePing(Client client)
     {

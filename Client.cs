@@ -5,9 +5,9 @@ class Client
 {
 
     private TcpClient tcp; //Almacenamos los datos de conexion del cliente
-    private string nick; //Almacenamos el nick del cliente (en este caso hardcodeado)
-    private string password;
-    private string email;
+    public string nick; //Almacenamos el nick del cliente (en este caso hardcodeado)
+    public string password;
+    public string email;
     private bool waitingPing; //Almacenamos si estamos a la espera que responda un ping de conexion
 
     //Constructor de la clase
@@ -17,15 +17,7 @@ class Client
         this.nick = "Anonymous";
         this.waitingPing = false;
     }
-    public Client(TcpClient tcpClient, string nick, string password,string email)
-    {
-        this.tcp = tcpClient;
-        this.nick = nick;
-        this.password = password;
-        this.email = email;
-    }
-
-
+   
         //-------------------------------- Getters ----------------------
         public TcpClient GetTcpClient()
     {
@@ -55,5 +47,17 @@ class Client
     public void SetWaitingPing(bool waitingPing)
     {
         this.waitingPing = waitingPing;
+    }
+    public void SetNick(string nick)
+    {
+        this.nick = nick;
+    }
+    public void SetPassword(string password)
+    {
+        this.password = password;
+    }
+    public void SetEmail(string email)
+    {
+        this.email = email;
     }
 }
