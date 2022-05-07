@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 class DatabaseManager
 {
-    static void Main(string[] args)
+    static void main(string[] args)
     {
         const string databaseName = "bestunitydb";
         const int port = 3306;
@@ -24,8 +24,8 @@ class DatabaseManager
         {
             Console.WriteLine(ex.Message);
         }
-        //SelectExample(connection);
-        InsertExample(connection);
+        SelectExample(connection);
+        //InsertExample(connection);
         connection.Close();
 
         void SelectExample(MySqlConnection connection)

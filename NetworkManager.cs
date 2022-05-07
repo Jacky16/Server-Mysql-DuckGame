@@ -100,8 +100,6 @@ public class Network_Manager
 
     public void CheckConnection()
     {
-
-
         //Revisamos conexiones cada cierto tiempo, en este caso 5000 milisegundos
         if (Environment.TickCount - this.lastTimePing > 5000)
         {
@@ -130,8 +128,6 @@ public class Network_Manager
             //Liberamos mutex
             clientListMutex.ReleaseMutex();
         }
-
-
     }
 
     private void ManageData(Client client, string data)
@@ -142,8 +138,10 @@ public class Network_Manager
         switch (parameters[0])
         {
             //Hemos definido que el 0 significa login y recibe dos parametros mas (usuario y contraseña)
-            case "0":
+            case "Login":
                 Login(parameters[1], parameters[2]);
+                break;
+            case "Register":
                 break;
             case "1":
                 //Hemos definido que el 1 es la respuesta del ping y no recibe mas parametros
@@ -209,4 +207,6 @@ public class Network_Manager
         //Libero el mutex
         clientListMutex.ReleaseMutex();
     }
+
+   
 }
