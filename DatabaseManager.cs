@@ -1,66 +1,68 @@
 ﻿using MySql.Data.MySqlClient;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 class DatabaseManager
 {
-    static void main(string[] args)
-    {
-        const string databaseName = "bestunitydb";
-        const int port = 3306;
-        const string uID = "kimjong";
-        const string password = "enti2022";
-        string conncectionString = $"Server=db4free.net;Port={port};database={databaseName};Uid={uID};password={password};SSL Mode=None; connect timeout=3600; default command timeout = 3600;";
+    const string databaseName = "bestunitydb";
+    const int port = 3306;
+    const string uID = "kimjong";
+    const string password = "enti2022";
+    string conncectionString = $"Server=db4free.net;Port={port};database={databaseName};Uid={uID};password={password};SSL Mode=None; connect timeout=3600; default command timeout = 3600;";
+    MySqlConnection connection;
 
-        MySqlConnection connection = new MySqlConnection(conncectionString);
+   
+    public void StartService()
+    {
+        connection = new MySqlConnection(conncectionString);
 
         try
         {
             connection.Open();
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             Console.WriteLine(ex.Message);
         }
-        SelectExample(connection);
-        //InsertExample(connection);
-        connection.Close();
 
-        void SelectExample(MySqlConnection connection)
+    }
+
+    public void Register(string nick,string password, string email)
+    {
+        MySqlCommand command = connection.CreateCommand();
+        string query = $"Insert Into Player(username,password,email) Values('{nick}',{password},'{email};";
+        command.CommandText = query;
+        try
         {
-            MySqlDataReader reader;
-            MySqlCommand command = connection.CreateCommand();
+            command.ExecuteNonQuery();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+    }
 
-            command.CommandText = "Select * from Avatar";
-
-            try
+    public bool LogInUser(string email, string password)
+    {
+        MySqlCommand command = connection.CreateCommand();
+        string query = $"Select * from Player where email = '{email}' and password = '{password}';";
+        command.CommandText = query;
+        MySqlDataReader reader;
+        try
+        {
+            reader = command.ExecuteReader();
+            while (reader.Read())
             {
-                reader = command.ExecuteReader();
-                while (reader.Read())
-                {
-                    Console.WriteLine(reader["Nick"].ToString());
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex);
+                return reader["email"].ToString() == email &&
+                    reader["password"].ToString() == password;
             }
         }
-        void InsertExample(MySqlConnection connection)
+        catch (Exception ex)
         {
-            MySqlCommand command = connection.CreateCommand();
-            command.CommandText = "Insert Into Player Values('Testing',12345,'testing@testing.com',2000-11-22,0);";
-            try
-            {
-                command.ExecuteNonQuery();
-
-            }catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
+            Console.WriteLine(ex.Message);
         }
+        //connection.Close();
+
+        return false;
     }
 
 }

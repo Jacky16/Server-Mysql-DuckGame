@@ -7,6 +7,7 @@ public class Network_Manager
     private Mutex clientListMutex;
     private int lastTimePing;
     private List<Client> disconnectClients;
+    private DatabaseManager databaseManager;
 
     public Network_Manager()
     {
@@ -24,14 +25,20 @@ public class Network_Manager
 
         //Lista de clientes pendientes de desconexion
         this.disconnectClients = new List<Client>();
+
+        databaseManager = new DatabaseManager();
+
     }
 
     public void Start_Network_Service()
     {
+        databaseManager.StartService();
+
         try
         {
             //Iniciamos el listener para prepararlo para la escucha de peticiones
             this.serverListener.Start();
+
             StartListening();
         }
 
@@ -139,7 +146,7 @@ public class Network_Manager
         {
             //Hemos definido que el 0 significa login y recibe dos parametros mas (usuario y contraseña)
             case "Login":
-                Login(parameters[1], parameters[2]);
+                Login(client,parameters[1], parameters[2]);
                 break;
             case "Register":
                 break;
@@ -150,10 +157,24 @@ public class Network_Manager
         }
     }
 
-    private void Login(string nick, string password)
+    private void Login(Client client, string email, string password)
     {
         //Hacemos un print pero aqui hariamos verificariamos los datos de login
-        Console.WriteLine("Petición de: " + nick + " usando la clave: " + password);
+        if (databaseManager.LogInUser(email, password))
+        {
+            //Si ha ido bien el inicio de sesion, le enviamos un codigo de Okay(2)
+            SendInfoToUnityClient(client, 2);
+        }
+        else
+        {
+            //Si ha ido mal enviamos que no se ha encontrado el user(3)
+            SendInfoToUnityClient(client, 3);
+        }
+    }
+
+    public void Register(string nick, string password,string email)
+    {
+        databaseManager.Register(nick, password, email);
     }
 
     private void SendPing(Client client)
@@ -165,6 +186,28 @@ public class Network_Manager
 
             //Enviamos el ping
             writer.WriteLine("ping");
+
+            //Limpiamos el bufer de envio para evitar que siga acumulando datos
+            writer.Flush();
+
+            //Asignamos a true la variable de ping propia del cliente para identificar que le hemos enviado un ping para la siguiente iteracion
+            client.SetWaitingPing(true);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine("Error: " + e.Message + " with client" + client.GetNick());
+        }
+    }
+
+    private void SendInfoToUnityClient(Client client,int code)
+    {
+        try
+        {
+            //Instanciamos el writer para enviar el mensaje de ping
+            StreamWriter writer = new StreamWriter(client.GetTcpClient().GetStream());
+
+            //Enviamos el ping
+            writer.WriteLine(code.ToString());
 
             //Limpiamos el bufer de envio para evitar que siga acumulando datos
             writer.Flush();

@@ -1,11 +1,13 @@
 ﻿class Server
 {
+
     static void Main(string[] args)
     {
         bool bServerOn = true;
 
         //Instanciamos el manager de red en un futuro aqui tendremos tambien la base de datos
         Network_Manager Network_Service = new Network_Manager();
+
 
         //Iniciamos los servicios del servidor, actualmente solo tenemos los servicios de red pero en un futuro tendremos BBDD
         StartServices();
@@ -28,4 +30,5 @@
             Network_Service.Start_Network_Service();
         }
     }
+    
 }
