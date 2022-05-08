@@ -8,6 +8,7 @@ public class Network_Manager
     private int lastTimePing;
     private List<Client> disconnectClients;
     private DatabaseManager databaseManager;
+    bool logIn = false;
 
     public Network_Manager()
     {
@@ -149,8 +150,8 @@ public class Network_Manager
                 client.SetEmail(parameters[1]);
                 client.SetPassword(parameters[2]);
                 
-                Login(client);
-                SendClassesToUnity(client);
+                if(Login(client))
+                    SendClassesToUnity(client);
                 break;
             case "Register":
                 Register(parameters[1], parameters[2], parameters[3]);
@@ -162,18 +163,20 @@ public class Network_Manager
         }
     }
 
-    private void Login(Client client)
+    bool Login(Client client)
     {
         //Hacemos un print pero aqui hariamos verificariamos los datos de login
         if (databaseManager.LogInUser(client.GetEmail(), client.GetPassword(),ref client))
         {
             //Si ha ido bien el inicio de sesion, le enviamos un codigo de Okay(2)
             SendInfoToUnityClient(client, 2);
+            return true;
         }
         else
         {
             //Si ha ido mal enviamos que no se ha encontrado el user(3)
             SendInfoToUnityClient(client, 3);
+            return false;
         }
     }
 
