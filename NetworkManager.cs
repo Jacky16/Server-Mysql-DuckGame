@@ -148,10 +148,13 @@ public class Network_Manager
             //Hemos definido que el 0 significa login y recibe dos parametros mas (usuario y contraseña)
             case "Login":
                 client.SetEmail(parameters[1]);
-                client.SetPassword(parameters[2]);
+                client.SetPassword(parameters[2]); 
                 
-                if(Login(client))
-                    SendClassesToUnity(client);
+                string idUser = databaseManager.GetUserIDByEmail(parameters[1]);
+                client.SetIdDatabase(int.Parse(idUser));
+
+                Login(client);
+
                 break;
             case "Register":
                 Register(parameters[1], parameters[2], parameters[3]);
@@ -160,16 +163,36 @@ public class Network_Manager
                 //Hemos definido que el 1 es la respuesta del ping y no recibe mas parametros
                 ReceivePing(client);
                 break;
+            case "AddClassUser":
+                string idClass = databaseManager.GetClassIdByNameClass(parameters[2]);
+                databaseManager.AddClassToUser(parameters[1], idClass);
+                break;
         }
     }
 
     bool Login(Client client)
     {
+        //Leyenda codigos
+            //2: Logeo pero sin clase asiganda
+            //3: User no encontrado
+            //4: Logeo con clase asignada
+
         //Hacemos un print pero aqui hariamos verificariamos los datos de login
         if (databaseManager.LogInUser(client.GetEmail(), client.GetPassword(),ref client))
         {
-            //Si ha ido bien el inicio de sesion, le enviamos un codigo de Okay(2)
-            SendInfoToUnityClient(client, 2);
+
+            //Comprobamos si tiene una clase asignada, si no, se la enviamos todas
+            if (databaseManager.CheckIfUserHasClass(client.idDatabase))
+            {
+                //Si ha ido bien el inicio de sesion, le enviamos un codigo de Okay(2)
+                SendInfoToUnityClient(client, 4);
+            }
+            else
+            {
+                SendInfoToUnityClient(client, 2);
+                SendClassesToUnity(client);
+            }
+           
             return true;
         }
         else
@@ -214,14 +237,24 @@ public class Network_Manager
             //Instanciamos el writer para enviar el mensaje de ping
             StreamWriter writer = new StreamWriter(client.GetTcpClient().GetStream());
 
-            //Enviamos el ping
+            
             if (code == 2)
             {
-                writer.WriteLine(code.ToString() + "/" + client.GetNick() + "/" + databaseManager.GetUserIDByUsername(client.GetNick()));
+                string clientString = code.ToString() + "/" + client.GetNick() + "/" + databaseManager.GetUserIDByEmail(client.GetEmail());
+                writer.WriteLine(clientString);
             }
             else if (code == 3)
             {
                 writer.WriteLine(code.ToString());
+            }else if(code == 4)
+            {
+                //Obtener el id de la Classe
+                string idClass = databaseManager.GetClassIdByUserId(client.idDatabase);
+
+                string clientWithClass = code.ToString() + "/" + client.GetNick() + "/" + databaseManager.GetUserIDByEmail(client.GetEmail());
+                clientWithClass += "|" + databaseManager.GetClassById(idClass);
+
+                writer.WriteLine(clientWithClass);
             }
 
             //Limpiamos el bufer de envio para evitar que siga acumulando datos

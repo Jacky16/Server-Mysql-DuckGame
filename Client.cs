@@ -8,6 +8,7 @@ class Client
     public string nick; //Almacenamos el nick del cliente (en este caso hardcodeado)
     public string password;
     public string email;
+    public int idDatabase;
     private bool waitingPing; //Almacenamos si estamos a la espera que responda un ping de conexion
 
     //Constructor de la clase
@@ -59,5 +60,9 @@ class Client
     public void SetEmail(string email)
     {
         this.email = email;
+    }
+    public void SetIdDatabase(int idDatabase)
+    {
+        this.idDatabase = idDatabase;
     }
 }
