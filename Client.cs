@@ -18,8 +18,8 @@ class Client
         this.waitingPing = false;
     }
    
-        //-------------------------------- Getters ----------------------
-        public TcpClient GetTcpClient()
+    //-------------------------------- Getters ----------------------
+    public TcpClient GetTcpClient()
     {
         return this.tcp;
     }

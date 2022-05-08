@@ -148,7 +148,9 @@ public class Network_Manager
             case "Login":
                 client.SetEmail(parameters[1]);
                 client.SetPassword(parameters[2]);
+                
                 Login(client);
+                SendClassesToUnity(client);
                 break;
             case "Register":
                 Register(parameters[1], parameters[2], parameters[3]);
@@ -212,7 +214,7 @@ public class Network_Manager
             //Enviamos el ping
             if (code == 2)
             {
-                writer.WriteLine(code.ToString() + "/" + client.GetNick());
+                writer.WriteLine(code.ToString() + "/" + client.GetNick() + "/" + databaseManager.GetUserIDByUsername(client.GetNick()));
             }
             else if (code == 3)
             {
@@ -231,7 +233,34 @@ public class Network_Manager
         }
     }
 
-   
+   private void SendClassesToUnity(Client client)
+    {
+        try
+        {
+            //Instanciamos el writer para enviar el mensaje de ping
+            StreamWriter writer = new StreamWriter(client.GetTcpClient().GetStream());
+
+            //Enviamos las classes
+            List<String> classes = databaseManager.GetAllClases();
+            string toSend = "GetAllClasses";
+            
+            for (int i = 0; i < classes.Count; i++)
+            {
+                toSend += "|" + classes[i];                
+            }
+            writer.WriteLine(toSend);
+            Console.WriteLine(toSend);
+            //Limpiamos el bufer de envio para evitar que siga acumulando datos
+            writer.Flush();
+
+            //Asignamos a true la variable de ping propia del cliente para identificar que le hemos enviado un ping para la siguiente iteracion
+            client.SetWaitingPing(true);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine("Error: " + e.Message + " with client" + client.GetNick());
+        }
+    }
     
     //Al recibir un ping asignamos la variable del ping propia del cliente a false para indicar que nos ha respondido
     private void ReceivePing(Client client)
