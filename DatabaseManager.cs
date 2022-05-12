@@ -131,7 +131,8 @@ class DatabaseManager
             reader = command.ExecuteReader();
             while (reader.Read())
             {
-                className = reader.GetString("name") + "/" + reader.GetString("speed") + "/" + reader.GetString("fire_rate") + "/" + reader.GetString("life");
+                className = reader.GetString("name") + "/" + reader.GetString("speed") + "/" + reader.GetString("fire_rate") + "/" + reader.GetString("life") + "/" + reader.GetString("damage");
+                Console.WriteLine(className);
             }
         }
         catch (Exception ex)
@@ -189,6 +190,10 @@ class DatabaseManager
         connection.Close();
         return id;
     }
+
+    //Obtener  la clase por el nombre del usuario
+
+
     #endregion
 
     #region User Getters
@@ -238,6 +243,8 @@ class DatabaseManager
         connection.Close();
         return id;
     }
+
+    
 
     #endregion
 

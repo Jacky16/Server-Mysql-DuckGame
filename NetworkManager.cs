@@ -1,4 +1,4 @@
-﻿using System.Net.Sockets;
+using System.Net.Sockets;
 using System.Net;
 public class Network_Manager
 {
@@ -328,5 +328,4 @@ public class Network_Manager
         clientListMutex.ReleaseMutex();
     }
 
-   
 }
