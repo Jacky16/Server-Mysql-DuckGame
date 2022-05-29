@@ -8,7 +8,6 @@ public class Network_Manager
     private int lastTimePing;
     private List<Client> disconnectClients;
     private DatabaseManager databaseManager;
-    bool logIn = false;
 
     public Network_Manager()
     {
@@ -147,10 +146,12 @@ public class Network_Manager
         {
             //Hemos definido que el 0 significa login y recibe dos parametros mas (usuario y contraseña)
             case "Login":
+                
                 client.SetEmail(parameters[1]);
                 client.SetPassword(parameters[2]); 
                 
                 string idUser = databaseManager.GetUserIDByEmail(parameters[1]);
+                if (idUser == "") return;
                 client.SetIdDatabase(int.Parse(idUser));
 
                 Login(client);
@@ -159,48 +160,62 @@ public class Network_Manager
             case "Register":
                 Register(parameters[1], parameters[2], parameters[3]);
                 break;
-            case "1":
-                //Hemos definido que el 1 es la respuesta del ping y no recibe mas parametros
-                ReceivePing(client);
-                break;
+                
             case "AddClassUser":
                 string idClass = databaseManager.GetClassIdByNameClass(parameters[2]);
                 databaseManager.AddClassToUser(parameters[1], idClass);
                 break;
+            case "GetClassByNickName":
+                string classToSend = databaseManager.GetClassByNickName(parameters[1]);
+                SendClass(client, classToSend);
+                break;
+                
         }
+    }
+
+    private void SendClass(Client client, string classToSend)
+    {
+        try
+        {
+            //Instanciamos el writer para enviar el mensaje de ping
+            StreamWriter writer = new StreamWriter(client.GetTcpClient().GetStream());
+            writer.WriteLine("Class|" + classToSend);
+            writer.Flush();
+            
+        }
+        catch(Exception ex)
+        {
+            Console.WriteLine(ex.ToString());
+        }
+        
     }
 
     bool Login(Client client)
     {
         //Leyenda codigos
-            //2: Logeo pero sin clase asiganda
-            //3: User no encontrado
-            //4: Logeo con clase asignada
-
-        //Hacemos un print pero aqui hariamos verificariamos los datos de login
-        if (databaseManager.LogInUser(client.GetEmail(), client.GetPassword(),ref client))
+        //2: Logeo pero sin clase asiganda
+        //3: User no encontrado
+        //4: Logeo con clase asignada
+        int code;
+        bool login = false;
+        //Logeo correcto
+        if (databaseManager.LogInUser(client.GetEmail(), client.GetPassword(), ref client))
         {
-
-            //Comprobamos si tiene una clase asignada, si no, se la enviamos todas
+            login = true;
+            code = 2;
+            //Comprobar si el usuario tiene clase asignada
             if (databaseManager.CheckIfUserHasClass(client.idDatabase))
             {
-                //Si ha ido bien el inicio de sesion, le enviamos un codigo de Okay(2)
-                SendInfoToUnityClient(client, 4);
-            }
-            else
-            {
-                SendInfoToUnityClient(client, 2);
-                SendClassesToUnity(client);
-            }
-           
-            return true;
+                code = 4;
+            }            
         }
         else
         {
-            //Si ha ido mal enviamos que no se ha encontrado el user(3)
-            SendInfoToUnityClient(client, 3);
-            return false;
+            //User no encontrado
+            code = 3;
         }
+        SendInfoToUnityClient(client,code);
+        return login;
     }
 
     public void Register(string nick, string password,string email)
@@ -232,62 +247,39 @@ public class Network_Manager
 
     private void SendInfoToUnityClient(Client client,int code)
     {
+        //Leyenda codigos
+        //2: Logeo pero sin clase asiganda
+        //3: User no encontrado
+        //4: Logeo con clase asignada
         try
         {
             //Instanciamos el writer para enviar el mensaje de ping
             StreamWriter writer = new StreamWriter(client.GetTcpClient().GetStream());
-
-            
+            string toSend = code.ToString() + "|";
             if (code == 2)
             {
-                string clientString = code.ToString() + "/" + client.GetNick() + "/" + databaseManager.GetUserIDByEmail(client.GetEmail());
-                writer.WriteLine(clientString);
+                toSend += client.GetNick() + "/" + client.idDatabase;
+                
             }
-            else if (code == 3)
+            else if(code == 3)
             {
-                writer.WriteLine(code.ToString());
-            }else if(code == 4)
+
+            }
+            else if (code == 4)
             {
-                //Obtener el id de la Classe
-                string idClass = databaseManager.GetClassIdByUserId(client.idDatabase);
-
-                string clientWithClass = code.ToString() + "/" + client.GetNick() + "/" + databaseManager.GetUserIDByEmail(client.GetEmail());
-                clientWithClass += "|" + databaseManager.GetClassById(idClass);
-
-                writer.WriteLine(clientWithClass);
+                toSend += client.GetNick() + "/" + client.idDatabase + "/" + databaseManager.GetClassIdByUserId(client.idDatabase);
             }
 
-            //Limpiamos el bufer de envio para evitar que siga acumulando datos
-            writer.Flush();
 
-            //Asignamos a true la variable de ping propia del cliente para identificar que le hemos enviado un ping para la siguiente iteracion
-            client.SetWaitingPing(true);
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine("Error: " + e.Message + " with client" + client.GetNick());
-        }
-    }
 
-   private void SendClassesToUnity(Client client)
-    {
-        try
-        {
-            //Instanciamos el writer para enviar el mensaje de ping
-            StreamWriter writer = new StreamWriter(client.GetTcpClient().GetStream());
-
-            //Enviamos las classes
-            List<String> classes = databaseManager.GetAllClases();
-            string toSend = "GetAllClasses";
-            
-            for (int i = 0; i < classes.Count; i++)
-            {
-                toSend += "|" + classes[i];                
-            }
             writer.WriteLine(toSend);
-            Console.WriteLine(toSend);
+
             //Limpiamos el bufer de envio para evitar que siga acumulando datos
             writer.Flush();
+            
+            if (code == 2 || code == 4)
+                SendAllClassesToUnity(client);
+
 
             //Asignamos a true la variable de ping propia del cliente para identificar que le hemos enviado un ping para la siguiente iteracion
             client.SetWaitingPing(true);
@@ -297,11 +289,20 @@ public class Network_Manager
             Console.WriteLine("Error: " + e.Message + " with client" + client.GetNick());
         }
     }
-    
-    //Al recibir un ping asignamos la variable del ping propia del cliente a false para indicar que nos ha respondido
-    private void ReceivePing(Client client)
+
+
+
+    void SendAllClassesToUnity(Client client)
     {
-        client.SetWaitingPing(false);
+        string toSend = "GetAllClasses|";
+
+        toSend += databaseManager.GetAllClases();
+        
+        StreamWriter writer = new StreamWriter(client.GetTcpClient().GetStream());
+
+        writer.WriteLine(toSend);
+
+        writer.Flush();
     }
     public void DisconnectClients()
     {

@@ -13,7 +13,8 @@ class DatabaseManager
     public DatabaseManager()
     {
         ShowAllPlayer();
-        GetAllClases();
+        Console.WriteLine(GetAllClases());
+
     }
 
     #region Classes Functions
@@ -87,7 +88,7 @@ class DatabaseManager
     #endregion
     
     #region Classes getters
-    public List<String> GetAllClases()
+    public String GetAllClases()
     {
         StartService();
         MySqlCommand command = connection.CreateCommand();
@@ -104,7 +105,8 @@ class DatabaseManager
                 if (i < 4)
                 {
                     string data = reader.GetString("name") + "/" + reader.GetString("speed") + "/"
-                        + reader.GetString("fire_rate") + "/" + reader.GetString("life");
+                        + reader.GetString("fire_rate") + "/" + reader.GetString("life") + "/"
+                        + reader.GetString("damage") + "/" + reader.GetString("id");
                     classes.Add(data);
                     i++;
                 }
@@ -115,7 +117,24 @@ class DatabaseManager
             Console.WriteLine(ex.Message);
         }
         connection.Close();
-        return classes;
+        return ParseClassesInAString(classes);
+    }
+    string ParseClassesInAString(List<String> classesList)
+    {
+        string classesToParse = "";
+        for (int i = 0; i < classesList.Count; i++)
+        {
+            if (i < classesList.Count - 1)
+            {
+                classesToParse += classesList[i] + "|";
+            }
+            else
+            {
+                classesToParse += classesList[i];
+            }
+        }
+
+        return classesToParse;
     }
 
     public string GetClassById(string idClass)
@@ -191,9 +210,38 @@ class DatabaseManager
         return id;
     }
 
-    //Obtener  la clase por el nombre del usuario
+    public string GetClassByNickName(string nickname)
+    {
+        string idPlayer = GetUserIdByNickname(nickname);
+        return GetClassByUserName(int.Parse(idPlayer));
+    }
 
-
+    //Obtener  la clase por el id del usuario
+    public string GetClassByUserName(int idUser)
+    {
+        string classId = GetClassIdByUserId(idUser);
+        StartService();
+        MySqlCommand command = connection.CreateCommand();
+        string query = $"Select * from Class where id='{classId}';";
+        command.CommandText = query;
+        MySqlDataReader reader;
+        string className = "";
+        try
+        {
+            reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                className = reader.GetString("name") + "/" + reader.GetString("speed") + "/" + reader.GetString("fire_rate") +
+                    "/" + reader.GetString("life") + "/" + reader.GetString("damage") + "/" + reader.GetString("id");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+        connection.Close();
+        return className;
+    }
     #endregion
 
     #region User Getters
@@ -243,9 +291,30 @@ class DatabaseManager
         connection.Close();
         return id;
     }
-
+    public string GetUserIdByNickname(string nick)
+    {
+        StartService();
+        MySqlCommand command = connection.CreateCommand();
+        string query = $"Select id from Player where username='{nick}';";
+        command.CommandText = query;
+        MySqlDataReader reader;
+        string id = "";
+        try
+        {
+            reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                id = reader.GetString("id");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+        connection.Close();
+        return id;
+    }
     
-
     #endregion
 
     void ShowAllPlayer()
